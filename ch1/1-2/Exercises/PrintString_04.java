@@ -11,3 +11,9 @@ public class PrintString_04 {
     StdOut.println(string2);
   }
 }
+
+/*
+String string1 = "hello";
+String string2 = string1;    // string2确实是指向string1的引用
+string2 = "world";           // 创建新的对象"wolrd", 此时string2指向新对象的引用
+*/
