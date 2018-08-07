@@ -34,7 +34,7 @@ public class Transaction {
     return Double.compare(this.amount, that.amount);
   }
 
-  public boolean equal(Object x) {
+  public boolean equals(Object x) {
     if (this == x) return true;    // 对象的引用相同
     if (x == null) return false;   // 避免下在面的代码中使用空引用
     if (this.getClass() != x.getClass()) return false;   // 同一种类型的所有对象的getCl
@@ -64,8 +64,8 @@ public class Transaction {
       System.out.println(more_trans[i]);
     }
 
-    System.out.println(more_trans[3].equal(more_trans[3]));
-    System.out.println(more_trans[3].equal(more_trans[4]));
+    System.out.println(more_trans[3].equals(more_trans[3]));
+    System.out.println(more_trans[3].equals(more_trans[4]));
   }
 }
 
