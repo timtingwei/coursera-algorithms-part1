@@ -1,5 +1,5 @@
 // Copyright [2018] <mituh>
-
+// Transaction.java
 // Dependencies: Date.java
 
 public class Transaction {
@@ -34,7 +34,16 @@ public class Transaction {
     return Double.compare(this.amount, that.amount);
   }
 
-  // public boolean equal(Object other);
+  public boolean equal(Object x) {
+    if (this == x) return true;    // 对象的引用相同
+    if (x == null) return false;   // 避免下在面的代码中使用空引用
+    if (this.getClass() != x.getClass()) return false;   // 同一种类型的所有对象的getCl
+    Transaction that = (Transaction) x;                  // ass()方法一定返回相同的引用, 上步后强转
+    if (this.name !=  that.name)         return false;
+    if (this.time !=  that.time)         return false;
+    if (this.amount != that.amount)      return false;
+    return true;
+  }
 
   public static void main(String[] args) {
     String name = args[0];      // mituh
@@ -54,17 +63,21 @@ public class Transaction {
     for (int i = 0; i < more_trans.length; i++) {
       System.out.println(more_trans[i]);
     }
+
+    System.out.println(more_trans[3].equal(more_trans[3]));
+    System.out.println(more_trans[3].equal(more_trans[4]));
   }
 }
 
 // mituh   1996/12/03   11.99
 
 /*
-$ java Transaction mituh   1996/12/03   11.99
 Unsorted:
 mituh       1996.12.3    11.99
 Turing      6.17.1990   644.08
 Tarjan      3.26.2002  4121.85
 Knuth       6.14.1999   288.34
 Dijkstra    8.22.2007  2678.40
+true
+false
 */
