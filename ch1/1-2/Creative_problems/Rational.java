@@ -8,6 +8,8 @@ public class Rational {
 
   public Rational(int up, int down) {
     // 分母为0时, 抛出异常
+    if (down == 0)
+      throw new RuntimeException("Rational(int, int): Denominator can't be zero");
     this.up = up;
     this.down = down;
   }
@@ -20,6 +22,8 @@ public class Rational {
 
   // 该数与有理数b相加
   public Rational plus(Rational b) {
+    assert(down < Integer.MAX_VALUE   && down > Integer.MIN_VALUE);
+    assert(b.down < Integer.MAX_VALUE && b.down > Integer.MIN_VALUE);
     Rational rational = new Rational(this);     // 构造一个新的与this相同的对象
     if (rational.down == b.down) {              // 如果分母相等
       rational.up += b.up;
@@ -30,11 +34,13 @@ public class Rational {
       rational = remove_divisor(rational);      // 用欧几里得算法消除最大公约数(注意不变性)
     }
     
-    return rational;
+    return rational;   // 也可以先计算实例变量, 在返回时创建对象
   }
 
   // 该数与有理数b相减
   public Rational minus(Rational b) {
+    assert(down < Integer.MAX_VALUE   && down > Integer.MIN_VALUE);
+    assert(b.down < Integer.MAX_VALUE && b.down > Integer.MIN_VALUE);
     Rational rational = new Rational(this);     // 构造一个新的与this相同的对象
     if (rational.down == b.down) {
       rational.up -= b.up;
@@ -50,6 +56,8 @@ public class Rational {
 
   // 该数与有理数b相乘
   public Rational times(Rational b) {
+    assert(down < Integer.MAX_VALUE   && down > Integer.MIN_VALUE);
+    assert(b.down < Integer.MAX_VALUE && b.down > Integer.MIN_VALUE);
     Rational rational = new Rational(this);   // 构造一个新的与this相同的对象
     rational.up   *= b.up;
     rational.down *= b.down;
@@ -60,9 +68,11 @@ public class Rational {
 
   // 该数与有理数b相除
   public Rational divides(Rational b) {
+    assert(down < Integer.MAX_VALUE   && down > Integer.MIN_VALUE);
+    assert(b.down < Integer.MAX_VALUE && b.down > Integer.MIN_VALUE);
     Rational rational = new Rational(this);   // 构造一个新的与this相同的对象
     if (b.up == 0)
-      throw new RuntimeException("divides:Denominator is zero");
+      throw new RuntimeException("Rational divides(Rational):Denominator can't be zero");
     rational.up *= b.down;
     rational.down *= b.up;
     rational = remove_divisor(rational);
@@ -82,13 +92,13 @@ public class Rational {
   }
 
   public String toString() {
-    return String.format("%d / %d", this.up, this.down);
+    return String.format("(%d / %d)", this.up, this.down);
   }
   
   // 消除最大公约数, 辗转相除算法
   public Rational remove_divisor(Rational orig_rational) {
     if (orig_rational.down == 0)                      // 分母为0抛出异常, 分子为0无需简化
-      throw new RuntimeException("Error Denominator is zero.");
+      throw new RuntimeException("Rational remove_divisor(Rational): Denominator can't be zero.");
     Rational rational = new Rational(orig_rational);
     if (rational.up == 0) return rational;            // 分子为零不需要化简
     int a = rational.up, b = rational.down;
@@ -105,16 +115,23 @@ public class Rational {
   }
 
   public static void main(String[] args) {
-    Rational rational1 = new Rational(3, 5);
-    Rational rational2 = new Rational(-3, 5);
+    // Rational r = new Rational();   // 缺省构造函数已经被取代
+    Rational rational1 = new Rational(3, 1);
+    Rational rational2 = new Rational(-3, -1);
+    Rational rational_large = new Rational(1111111111, 999999);
+    // Rational rational_large = new Rational(111111111111, 999999);    // int ..too large
+    System.out.println("large = " + rational_large);
+    System.out.println("times: " + rational1 + " * " + rational_large + " = "
+                       + rational1.times(rational_large));             // error:使用整型溢出
     System.out.println("plus: " + rational1 + " + " + rational2 + " = "
                        + rational1.plus(rational2));
-    System.out.println("minus: " + rational1 + " + " + rational2 + " = "
+    System.out.println("minus: " + rational1 + " - " + rational2 + " = "
                        + rational1.minus(rational2));
-    System.out.println("times: " + rational1 + " + " + rational2 + " = "
+    System.out.println("times: " + rational1 + " * " + rational2 + " = "
                        + rational1.times(rational2));
-    System.out.println("divides: " + rational1 + " + " + rational2 + " = "
+    System.out.println("divides: " + rational1 + " / " + rational2 + " = "
                        + rational1.divides(rational2));
+
   }
   
 }
