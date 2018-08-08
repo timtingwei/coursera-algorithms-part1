@@ -2,8 +2,6 @@
 // myReadInts.java
 
 import java.util.Scanner;
-import java.util.Queue;
-// import java.util.AbstractQueue;
 public class myReadInts {
   public static int[] myReadInts() {   // 静态方法, 返回读取的数组
     Scanner read = new Scanner(System.in);
