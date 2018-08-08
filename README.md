@@ -274,7 +274,7 @@ Hello World
 > * 实现自己的Transcation类
 > * 新的构造函数, 比较两笔交易, 错误异常抛出
 
-
+	
 ##### 1.2.14
 为Transaction类添加equals(Object x)
 
@@ -291,7 +291,7 @@ public boolean equals(Object x) {
 }
 ```
 
-
+#### Creative Problems
 ##### 1.2.16
 有理数, 为有理数实现一个不可变数据类型Rational, 支持加减乘除操作
 
@@ -342,3 +342,211 @@ public Transaction(String transaction) {
       throw new IllegalArgumentException("Amount can't be NaN or Infinite");
   }
 ```
+
+
+### 1.3 背包, 队列和栈
+
+三种数据类型, 
+背包(Bag), 队列(Queue)和栈(Stack), 不同之处在于删除或者访问对象的顺序不同.
+
+这节的三个目标:
+> * 1, 说明我们对集合中的对象的表示方式将直接影响各种操作的效率
+> * 2, 介绍泛型和迭代, 清晰 简洁 优雅
+> * 3, 链式数据结构的重要性, 才能高效实现背包, 队列和栈.
+
+#### 1.3.1 API
+这里的API都书中的实现。
+
+##### 1.3.1.1 泛型
+
+类名后的<Item>记号将Item定义为一个类型参数, 它一个象征性的占位符, 表示的是用例将会使用的某种具体的数据类型。
+<span style="color:red">类型参数必须被实实例化引用类型</span>
+
+##### 1.3.1.2 自动装箱
+<span style="color:red">类型参数必须被实实例化引用类型</span>, Java用自动装箱机制来使泛型代码能够处理原始数据类型。
+
+封装类型的原始数据类型对应的引用类型:
+`Boolean`, `Byte`, `Character`, `Double`, `Float`, `Integer`, `Long`和`Short`
+对应:
+`boolean`, `byte`, `character`, `double`, `float`, `integer`, `long` 和 `short`
+在处理赋值语句, 方法的参数和算数或逻辑表达式时, Java会自动在引用类型和对应的原始数据类型之间进行转换
+```java
+Stack<Integer> stack = new Stack<Integer>();
+stack.push(17);         // int -> Integer, 自动装箱
+int i = stack.pop();    // Integer -> int, 自动拆箱
+```
+
+##### 1.3.1.3 可迭代的集合类型
+如果集合是可迭代的, 可以用foreach语句, 写出简洁的遍历代码
+```java
+Queue<Transaction> collection = new Queue<Transaction> ();
+for (Transaction t : collection) {
+  StdOut.println(t);
+}
+```
+
+##### 1.3.1.4 背包
+
+背包是一种不支持删除元素的集合数据类型, 他的目的就是帮助用例收集元素并迭代遍历所有收集到的元素。
+
+添加进背包, 元素用foreach语句访问。
+使用Bag说明元素的顺序不重要, 不要就使用Stack, Queue
+
+##### 1.3.1.5 先进先出队列
+队列(Queue), 基于先进先出(FIFO)策略的集合类型, (first int first out)出列的顺序和入列的顺序相同
+
+计算的的任务响应, 排队
+
+实现一个myReadInts()方法, 无需预先知道文件的大小, 将所有的整数读入一个数组
+```java
+import java.util.Scanner;
+public class myReadInts {
+  public static int[] myReadInts() {   // 静态方法, 返回读取的数组
+    Scanner read = new Scanner(System.in);
+    // Queue queue = new Queue<int> ();      // 不能使用原始数据类型
+    // Queue queue = new Queue<Integer> ();  // queue泛型要定义参数类型
+    // Queue is a abstract, 这里的api是书中的实现, 跟java中util中有区别
+    Queue<Integer> queue = new Queue<Integer>();
+    while (read.hasNextInt()) {
+      queue.enqueue(read.nextInt());    // Stack用pop(), Bag用add(), 但都是书中实现
+    }
+    read.close();
+
+    int N = queue.size();
+    int[] a = new int[N];
+    for (int i = 0; i < N; i++) {
+      a[i] = queue.dequeue();
+    }
+    return a;
+  }
+}
+```
+
+##### 1.3.1.6 下压栈
+栈(Stack), 是一种基于`后进先出`(LIFO)的策略的集合类型.
+
+邮件的压箱底, 超链接的点击与退回, 双向的火车轨道, 坑
+
+1, 实现将标准输入的整数, 逆序输出(这种实现与书本API无关)
+```java
+import java.util.Scanner;
+import java.util.Stack;
+public class Reverse {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    Stack<Integer> s = new Stack<Integer>();
+    while (read.hasNextInt()) {
+      s.push(read.nextInt());
+    }
+    read.close();
+    while (!s.empty()) {
+      System.out.println(s.pop());
+    }
+  }
+}
+```
+
+##### 1.3.1.7 算术表达式的求值
+
+用两个栈(一个用于保存运算符, 一个用于保存操作数), 完成算术表达式的求值
+```
+/*
+ * 遇到运算符加入运算符栈
+ * 遇到数字加入操作数栈
+ * 遇到左括号 "("或 " ", 忽略
+ * 右括号栈顶两个操作数出栈, 栈顶运算符出栈
+ * 计算该表达式后, 结果入操作数栈
+ */
+```
+
+根据以上思路, 自己实现如下版本:
+```java
+import java.util.Scanner;
+import java.util.Stack;
+public class Evaluate {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    String s = read.nextLine();       // 读入一整行字符串
+    read.close();
+    Stack<Character> stk_ch = new Stack<Character>();            // Java, Char需要写全拼
+    Stack<Double> stk_d = new Stack<Double>();
+    for (int i = 0; i < s.length(); i++) {
+      if (s.charAt(i) == ' ' || s.charAt(i) == '(') continue;    // Java中用s.charAt(i), 不是s[i]
+      // if (s.charAt(i).isDigit()) {}                           // 回答下面问题
+      if ( 0 <= s.charAt(i)- '0' && s.charAt(i) - '0' <= 9) {    // Java中的isdigit()是什么
+        stk_d.push((double)s.charAt(i) - '0');                   // 转化成int->double入栈
+      } else if (s.charAt(i) == '+' || s.charAt(i) == '-'
+                 || s.charAt(i) == '*' || s.charAt(i) == '/') {
+        stk_ch.push(s.charAt(i));
+      } else if (s.charAt(i) == ')') {
+        double a = stk_d.pop(), b = stk_d.pop();    // 栈顶两个运算符出栈
+        char ch = stk_ch.pop();
+        double ans = 0.0;
+        switch (ch) {
+          case '+':
+            ans = a+b;
+            break;
+          case '-':
+            ans = a-b;
+            break;
+          case '*':
+            ans = a*b;
+            break;
+          case '/':
+            ans = a/b;
+            break;
+        }
+        stk_d.push(ans);
+      }
+    }
+    System.out.println(s + " = " + String.format("%.2f", stk_d.peek()));
+  }
+}
+```
+
+根据书中给出的代码, 改进一下:
+`做出3点改进, 1个添加功能, 输入格式的牺牲`
+
+```java
+/* 改进:  但改进后, 对输入的输入格式有所限制
+ * 并行边读边运算
+ * 简化出栈后运算部分代码, 不用创造无关的对象
+ * 添加sqrt功能
+ */
+// ( ( sqrt ( 25 )  -  3 ) * 4 )
+
+import java.util.Scanner;
+import java.util.Stack;
+public class Evaluate {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    Stack<String> stk_s = new Stack<String>();
+    Stack<Double> stk_d = new Stack<Double>();
+    while (read.hasNext()) {
+      String s = read.next();                  // 读取字符串, 可省略对" "判断的代码
+      if      (s.equals("(")) continue;
+      // == 判断引用所指向的对象是否为同一个, equals判断对象的等价性, 现在成更相等
+      else if (s.equals("+") || s.equals("-") || s.equals("*") || s.equals("/")
+               || s.equals("sqrt")) {
+        stk_s.push(s);
+
+      } else if (s.equals(")")) {
+        double v = stk_d.pop();    // why? 因为像sqrt这种只需要取一个数, 按需求pop比较好
+        String op = stk_s.pop();
+        if (op.equals("+")) v += stk_d.pop();
+        else if (op.equals("-")) v = stk_d.pop() - v;
+        else if (op.equals("*")) v = stk_d.pop() * v;
+        else if (op.equals("/")) v = stk_d.pop() / v;
+        else if (op.equals("sqrt")) v = Math.sqrt(v);
+        stk_d.push(v);
+      } else {   // 既不是括号也不是字符, 按照double压入
+        stk_d.push(Double.parseDouble(s));
+      }
+    }
+    read.close();
+    System.out.println(stk_d.peek());
+  }
+}
+```
+
+#### 1.3.2 集合类数据类型的实现
