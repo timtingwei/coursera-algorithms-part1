@@ -550,3 +550,149 @@ public class Evaluate {
 ```
 
 #### 1.3.2 集合类数据类型的实现
+
+##### 1.3.2.1 定容栈
+
+注意需要在构造函数中, 对String数组构造大小
+```java
+public class FixedCapacityStackOfStrings {
+  private String[] a;
+  private int N;
+  // public FixedCapacityStackOfStrings() {}   // 数组a在构造函数中构造
+  public FixedCapacityStackOfStrings(int cap) {
+    a = new String[cap];                       // 数组a在构造函数中构造
+  }
+  public boolean isEmpty() { return N == 0;}
+  public int size() { return N;}
+  public void push(String elem) {
+    a[N++] = elem;
+  }
+  public String pop() {
+    return a[--N];
+  }
+}
+```
+
+泛型版本:
+<span style="color:red">注意构造栈时候, 创建泛型数组, 需要用Object类创建的对象后, 用Item[] 类型进行转换, 这个是Java的特性</span>
+```java
+// 实现一个定容栈(泛型版本)
+import java.util.Scanner;
+public class FixedCapacityStack<Item> {
+  private Item[] a;
+  private int N;
+  // public FixedCapacityStackOfStrings() {}   // 数组a在构造函数中构造
+  public FixedCapacityStack(int cap) {
+    a = (Item[])new Object[cap];               // 创建泛型数组, 用Object类创建, Item[]转换
+  }
+  public boolean isEmpty() { return N == 0;}
+  public int size() { return N;}
+  public void push(Item elem) {
+    a[N++] = elem;
+  }
+  public Item pop() {
+    return a[--N];
+  }
+```
+
+##### 1.3.2.3 数组大小
+Java数组一旦创建, 无法改变; 需要手动实现, 动态的对栈空间的分配; 
+`push时, 栈满扩容两倍； pop时, 剩余空间多于3/4, 缩小1/2, 以至于后面的更多push操作`
+
+
+```java
+// 对数组大小分配的方法
+private void resize(int max) {
+  Item[] temp = (Item[]) new Object[max];   // 用于存放数组数据的临时数组
+  for (int i = 0; i < N; i++) {
+    temp[i] = a[i];    // 转移数据, 此时N一定不会越界
+  }
+  a = temp;            // 数组对象指向新的对象引用
+  // System.out.println("resize the item array, capacity = " + max);
+}
+```
+
+```java
+// push前先分配数组大小
+public void push(Item elem) {
+  if (N == a.length)     // why? 在上一次push中,N++, 如果N超过了构造大小, N将不发生改变吗?
+    resize(a.length * 2);
+  a[N++] = elem;
+}
+```
+
+```java
+// pop后, 回收游离对象, 缩减额外多余的数组空间
+public Item pop() {
+  Item item = a[--N];
+  a[N] = null;           // 可以避免对象游离
+  if (N > 0 && N == a.length/4) resize(a.length/2);   // 数组剩余空间太多, 缩小
+  return item;
+}
+```
+
+##### 1.3.2.4 对象游离
+Java垃圾回收机制, 回收所有无法被访问的对象的内存。
+
+但pop()的实现中, 只是改变了索引的大小, 元素的引用仍然存在于数组中
+
+**保存一个不需要对象的引用, 称为游离**
+只需要将不需要对象的引用值设置为null就ok了
+```java
+Item item = a[--N];
+a[N] = null;           // 可以避免对象游离
+```
+
+##### 1.3.2.5 迭代
+
+为动态调整栈大小的类加入可迭代版本
+```java
+// 测试
+ResizeArrayStack<String> s = new ResizeArrayStack<String>();
+// ...
+for (String it : s) {
+  System.out.println(it);
+}
+```
+
+要使类可以迭代
+> * 1, 在它的声明中加入implenments Iterable<Item>
+> * 2, 在类中添加一个iterator()方法, 返回Iterator<Item>迭代器对象
+> * 3, 在类内插入一个嵌套类
+> * 4, 在程序开头, import java.util.Iterator;
+
+step 1:
+```java
+// public class ResizeArrayStack implements Iterator<Item>
+// public class ResizeArrayStack implements Iterable<Item>
+public class ResizeArrayStack<Item> implements Iterable<Item> {   // 在栈类中嵌套Iterator
+  // ...
+}
+```
+<span style="color:red">注意一下类声明中是implenments Iterable<Item>, 证明这个集合是可迭代的, 在嵌套类中是, implements Iterator<Item> 证明它就是内嵌类的迭代器</span>
+
+step 2:
+```java
+// 创建逆序迭代器, 可用于遍历数组
+public Iterator<Item> iterator()    // 实现一个iterator()方法, 并返回一个Iterator对象
+{ return new ReverseArrayIterator(); }
+```
+
+step3:
+```java
+private class ReverseArrayIterator implements Iterator<Item> {
+  // Iterator类必须包含两个方法, hasNext()返回boolean值和 next()返回集合中的泛型元素
+  private int i = N;
+  public boolean hasNext() { return i > 0;}    // 索引此时比0小, 未到栈头
+  public Item    next()    { return a[--i];}   // 获取逆序下一个元素
+  public void    remove()  {               }   // remove函数常为空
+}
+```
+
+为了和Iterator的结构保持一致
+> * 如果调用remove(), 则抛出UnsupportedOperationException
+> * 如果用例在调用next()时i为0, 则抛出NoSuchElementException
+因为只在foreach中使用迭代器, 这些情况都不会出现啦, 所以忽略代码。
+
+
+先从定容栈讲起, 实现一个后进先出(LIFO)的栈。可以将元素类型释放出来, 变成一个泛型类。 又可以用N和a.length比较, 对数组小心进行动态扩容和索容, 注意这个阶段可能会出现对象的游离, 需要将对象指向null, 便于Java回收。接着介绍了如何将一个类，改写成可迭代的类(4个步骤)。
