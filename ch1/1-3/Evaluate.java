@@ -11,6 +11,48 @@
  * 计算该表达式后, 结果入操作数栈
  */
 
+/* 改进:  但改进后, 对输入的输入格式有所限制
+ * 并行边读边运算
+ * 简化出栈后运算部分代码, 不用创造无关的对象
+ * 添加sqrt功能
+ */
+// ( ( sqrt ( 25 )  -  3 ) * 4 )
+
+import java.util.Scanner;
+import java.util.Stack;
+public class Evaluate {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    Stack<String> stk_s = new Stack<String>();
+    Stack<Double> stk_d = new Stack<Double>();
+    while (read.hasNext()) {
+      String s = read.next();                  // 读取字符串, 可省略对" "判断的代码
+      if      (s.equals("(")) continue;
+      // == 判断引用所指向的对象是否为同一个, equals判断对象的等价性, 现在成更相等
+      else if (s.equals("+") || s.equals("-") || s.equals("*") || s.equals("/")
+               || s.equals("sqrt")) {
+        stk_s.push(s);
+
+      } else if (s.equals(")")) {
+        double v = stk_d.pop();    // why? 因为像sqrt这种只需要取一个数, 按需求pop比较好
+        String op = stk_s.pop();
+        if (op.equals("+")) v += stk_d.pop();
+        else if (op.equals("-")) v = stk_d.pop() - v;
+        else if (op.equals("*")) v = stk_d.pop() * v;
+        else if (op.equals("/")) v = stk_d.pop() / v;
+        else if (op.equals("sqrt")) v = Math.sqrt(v);
+        stk_d.push(v);
+      } else {   // 既不是括号也不是字符, 按照double压入
+        stk_d.push(Double.parseDouble(s));
+      }
+    }
+    read.close();
+    System.out.println(stk_d.peek());
+  }
+}
+
+
+/* 根据算法自己给出的实现
 import java.util.Scanner;
 import java.util.Stack;
 public class Evaluate {
@@ -52,3 +94,4 @@ public class Evaluate {
     System.out.println(s + " = " + String.format("%.2f", stk_d.peek()));
   }
 }
+*/
