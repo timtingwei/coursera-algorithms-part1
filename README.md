@@ -695,4 +695,236 @@ private class ReverseArrayIterator implements Iterator<Item> {
 因为只在foreach中使用迭代器, 这些情况都不会出现啦, 所以忽略代码。
 
 
+##### 1.3.2小结
 先从定容栈讲起, 实现一个后进先出(LIFO)的栈。可以将元素类型释放出来, 变成一个泛型类。 又可以用N和a.length比较, 对数组小心进行动态扩容和索容, 注意这个阶段可能会出现对象的游离, 需要将对象指向null, 便于Java回收。接着介绍了如何将一个类，改写成可迭代的类(4个步骤)。
+	
+#### 1.3.3 链表
+
+##### 1.3.3.6 其他位置的插入和删除操作
+
+简单:
+> * 在表头插入结点
+> * 在表头删除结点
+> * 在表尾插入结点
+
+不容易:
+> * 删除指定的结点
+> * 在指定结点之前插入一个新结点
+
+遍历整条链表找出指向该结点的结点(ex1.3.19), 这种解决方案所需时间和链表长度成正比;
+`为此我们需要双向链表`, 其中每个结点都含有两个链接, 不同的方向。(ex1.3.31)
+
+##### 1.3.3.7 遍历
+
+遍历链表的简洁表达
+```java
+for (Node x = first; x != null; x = x.next) {
+  // ...
+}
+```
+
+##### 1.3.3.8 栈的实现
+
+最优设计目标:
+> * 它可以处理任意类型的数据;
+> * 所需的空间总是和集合的大小成正比
+> * 操作所需时间总是和集合的大小无关
+最后一点解决了动态数组实现栈的算法中, 对数组扩容需要重新构造一个数组对象, 此操作的时间和数组的长度成正比O(n)的复杂度
+
+**用链表实现下压栈**
+```java
+import java.util.Iterator;
+public class Stack<Item> implements Iterable<Item>{
+    private int N;        // 结点的数量
+    private Node first;   // 首个结点
+    private class Node {  // 链表的结点构造
+        Item item;
+	    Node next;
+    }
+    public int size() { return N;}
+    public boolean isEmpty() { return first == null;}  // 首个结点指向null
+    public void push(Item elem) {
+        // 向栈中添加元素
+        Node oldFirst = first;
+	    first = new Node();
+		first.next = oldFirst;
+		first.item = elem;
+		++N;
+    }
+	
+	public Item pop() {
+	    // 弹出栈顶元素
+		if (first == null) return null;    // 栈不为空
+		Item e = new Item();
+		e = first.item;
+		first = first.next;
+		--N;
+		return e;
+	}
+	
+	public Iterator<Item> iterator() 
+	{ return new StackIterator();}
+	
+	private class StackIterator implements Iterator<Item> {
+	    // 顺序迭代器类
+		private Node itFirst = new Node();
+		itFirst = first;
+		public boolean hasNext() { return itFirst != null; }
+		public Item next() {
+		    Item n_item = itFirst.item;
+			itFirst = itFirst.next;
+			return n_item;
+		}
+		public void remove() {     }
+	}
+}
+```
+
+##### 1.3.3.9 队列的实现
+**用链表实现先进先出队列**
+```java
+public class Queue<Item> {
+  private Node first;
+  private Node last;
+  int N = 0;
+  private class Node {      // 定义结点的嵌套类
+    Item item;
+    Node next;
+  }
+  // 没有构造函数, first, last在空栈时, 都指向null, N = 0;
+
+  // 判空(思考一下first == last为什么不行?)
+  public boolean isEmpty() {
+    // return first == last;      // why?
+    return first == null;
+  }
+
+  // 获取结点个数
+  public int size() { return N; }
+
+  // 在尾部插入(插前判空, first进行额外处理)
+  public void enqueue(Item e) {
+    Node oldLast = last;
+    last = new Node();
+    last.item = e;                 // 新结点的元素对象
+    last.next = null;              // 新结点指向null
+    // oldLast.next = last;        // 原来尾部结点指向新插入的结点
+    if (isEmpty()) first = last;
+    else           oldLast.next = last;    // 空队列时, oldLast指向last为null的引用对象
+    ++N;
+  }
+  
+  // 在头部删除, 返回被删除的对象元素(删后判空, 对last进行额外处理)
+  public Item dequeue() {
+    if (isEmpty()) return null;  // 判空
+    Item item = first.item;
+    first = first.next;
+    if (first == null)           // 如果删除的是最后一个元素
+      last = null;
+    --N;
+    return item;
+  }
+}
+```
+
+<span style="color:red">**链表实现队列要注意的地方:**</span>
+
+<span style="color:red">1, 为什么该实现队列的判空, 不用 first == last来判断.</span>
+```sh
+空队列, first = null, last = null;
+队列中一个结点, first = last; first.next = null;
+多个结点时, first != last
+因此:
+first == null, 只能说明有一个结点或空
+```
+<span style="color:red">2, 插入(尾部)前判空, 对first进行额外处理</span>
+如果当前队列为空的, 插入一个结点, first = last;
+
+否则的话, oldLast.next = last;   在空队列时, oldLast指向last为null
+
+<span style="color:red">3, 删除前判空 + 删除(头部)后判空, 对last进行额外处理</span>
+
+a, 若队列为空, 返回null
+
+b, 若队列中只剩下最后一个元素（first.next == null）, 删除后last也要变成null
+
+
+
+
+##### 1.3.3.10 背包的实现
+
+
+**用链表实现背包**
+```java
+import java.util.Iterator;
+public class Bag<Item> implements Iterable<Item> {
+  private Node first;       // 链表的首结点
+  // private int  N;        // 不需要知道背包中的数量
+  private class Node {
+    Item item;
+    Node next;
+  }
+  public boolean isEmpty()
+  { return first == null; }
+  public int size()
+  { return N; }
+  public void add(Item e) {
+    Node oldFirst = first;
+    first = new Node();
+    first.item = e;
+    first.next = oldFirst;
+    ++N;
+  }
+  public Iterator<Item> iterator() {
+    return new ListIterator();
+  }
+  private class ListIterator implements Iterator<Item> {
+    private Node current = first;
+    public boolean hasNext() { return current != null;}
+    public Item    next()    {
+      Item item = current.item;
+      current = current.next;
+      return item;
+    }
+    public void    remove()  {                        }
+  }
+}
+```
+
+#### 1.3.4 综述
+
+目前用两种方式表示对象集合, 数组和链表(顺序存储和链式存储).
+
+|:数据结构     :|:优点                      :|:缺点                     :|
+|--------------|---------------------------|--------------------------|
+|数组          |通过索引可以直接访问元素       |在初始化时, 就需要知道元素数量|
+|链表          |使用空间大小和元素的数量成正比  |需要通过引用访问任意元素     |
+
+用下面步骤识别目标, 并使用数据抽象解决问题:
+> * 定义API
+> * 根据特定的应用场景开发用例代码
+> * 描述一种数据结构(一组值的表示), 并在API所对应的抽象数据类型的实现中根据它定义类的实例变量
+> * 描述算法(实现一组操作的方式), 并根据它实现类中的实例方法
+> * 分析算法性能特点
+#### 1.3 小结
+这一节介绍了集合中对象的表示方法, 然后介绍了一些现代编程中的方法:泛型.迭代等; 然后从栈的数组表示(定容栈)开始讲起, 逐渐改进数组大小固定的不足, 最后引出链表这一个数据结构。然后用链表重新实现和下压栈(FILO), 先进先出的队列(FIFO), 以及背包(Bag), 跟之前在《数据结构》中所讲的区别就是, 抓住了链表这一数据结构的特点, 忽略了一些内存管理的细节, 又加入了自动装箱(AutoBoxing), 泛型(Generics)和迭代(Iterator)的新知识。
+
+之后的章节中, 会以这个数据结构类基础, 介绍更多的数据结构.
+
+#### Q+A
+##### 为什么将Node声明成私有嵌套类, 为什么使用private?
+可以将Node的方法和实例变量的访问范围控制在包含它的类中。
+
+私有嵌套类的特点是: 只有包含它的类能够直接访问它的实例变量。
+##### 编译后发现Stack.class 和 Stack$Node.class
+第二个文件是内部类Node创建的, Java命名规则会使用$分隔外部类和内部类
+
+##### 为什么不在一个单独的collection中实现所有数据结构的操作
+这样属于**宽接口**,
+> 1, 我们总是以API作为设计高效算法和数据结构的起点, 而设计只含几个操作的接口, 比复杂的接口简单.
+> 2, 坚持窄接口, 是为了它们能限制用例的行为, 比如 后进先出对Stack<String>很重要, 和先进先出对Queue<String>, 限制了访问顺序
+
+#### AutoBoxing Q+A
+#### Generics Q+A
+#### Iterator Q+A
+
