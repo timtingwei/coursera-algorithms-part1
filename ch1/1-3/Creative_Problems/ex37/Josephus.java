@@ -1,6 +1,23 @@
 // Copyright [2018] <mituh>
 // Josephus.java
 
+public class Josephus {
+  public static void main(String[] args) {
+    int N = Integer.parseInt(args[0]);
+    int M = Integer.parseInt(args[1]);
+    Queue<Integer> queue = new Queue<Integer> ();
+    for (int i = 0; i < N; i++) { queue.enqueue(i); }
+    while (!queue.isEmpty()) {
+      for (int i = 0; i < M-1; i++) {
+        queue.enqueue(queue.dequeue());   // 出列 同时 进列
+      }
+      System.out.print(queue.dequeue() + " ");
+    }
+    System.out.println();
+  }
+}
+
+/*
 import java.util.Scanner;
 public class Josephus {
   public static void main(String[] args) {
@@ -30,3 +47,4 @@ public class Josephus {
     System.out.println();
   }
 }
+*/
