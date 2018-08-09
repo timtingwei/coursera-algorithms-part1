@@ -928,3 +928,327 @@ public class Bag<Item> implements Iterable<Item> {
 #### Generics Q+A
 #### Iterator Q+A
 
+
+#### Exercises
+	
+##### 1.3.4 使用栈判定其中的括号对是否完整匹配
+
+先为Stack类添加一个top()方法
+```java
+// Parentheses.java
+// 使用栈判定其中的括号对是否完整匹配
+// case:
+// [()]{}{[()()]()}
+// [(])
+// ()[
+// )
+
+import java.util.Scanner;
+public class Parentheses {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    String s = read.next();
+    Stack<Character> stk_ch = new Stack<Character>();
+    int ok = 1;
+    for (int i = 0; i < s.length(); i++) {
+      if (s.charAt(i) == '(' || s.charAt(i) == '[' || s.charAt(i) == '{') {
+        stk_ch.push(s.charAt(i));
+      }
+      else if (s.charAt(i) == ')' || s.charAt(i) == ']' || s.charAt(i) == '}') {
+        if (stk_ch.isEmpty()) {       // 右括号要匹配左括号时, 栈已空, 无法匹配
+          ok = 0; break;
+        }
+        if      (stk_ch.top() == '(' && s.charAt(i) == ')') { stk_ch.pop(); }
+        else if (stk_ch.top() == '[' && s.charAt(i) == ']') { stk_ch.pop(); }
+        else if (stk_ch.top() == '{' && s.charAt(i) == '}') { stk_ch.pop(); }
+        else { ok = 0; break; }   // 右括号匹配失败
+      }
+    }
+    if (stk_ch.isEmpty() && ok == 1) {  // 打印的端口变窄
+      System.out.println("true");
+    } else {
+      System.out.println("false");      // 还没有匹配完全 ()[
+    }
+  }
+}
+```
+	
+
+
+##### 1.3.5 用栈实现二进制转换
+O(n), 可以减少一个逆序输出
+```java
+Stack<int> stack = new Stack<int>;
+while (N > 0) {
+  stack.push(N % 2);
+  N /= 2;
+}
+for (int i : stack) {System.out.print(i);}
+System.out.println();
+```
+
+##### 1.3.6 为stack添加一个peek(), 已经做了
+```java
+public Item peek() {
+  // 获得栈顶元素, 但不删除(需要判空)
+  if (isEmpty()) throw new NoSuchElementException;
+  return first.item;
+}
+```
+	
+##### 1.3.10 中缀表达式转化为后缀表达式
+```java
+Solution:
+// 一个后缀表达式queue, 一个操作符stack
+1, 忽略左括号
+2, 遇到数入queue
+3, 遇到操作符入stack
+4, 遇到')', 操作符出栈入列
+5, FIFO打印队列
+```
+
+
+##### 1.3.11 后缀表达式的计算
+
+只用一个栈存储操作数, 每次读到操作符, 出栈两次.
+<span style="color:red">注意, 减法和除法出栈后的顺序,  原意是 a - b;  出栈后的顺序是 b - a;  因此要做些细微处理</span>
+```java
+import java.util.Scanner;
+public class EvaluatePostfix {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    Stack<Double> stk_d = new Stack<Double>();
+    while (read.hasNext()) {
+      String s = read.next();
+      double v = 0.0;
+      // if (s.equals(" ") || s.equals("(")) continue;     // 后缀表达式无括号, 且这种读取方式无空串
+      if (s.equals("+"))      { v = stk_d.pop() + stk_d.pop(); stk_d.push(v);}
+      else if (s.equals("-")) { v = -(stk_d.pop() - stk_d.pop()); stk_d.push(v);}
+      else if (s.equals("*")) { v = stk_d.pop() * stk_d.pop(); stk_d.push(v);}     // 小心溢出
+      else if (s.equals("/")) { v = 1 / (stk_d.pop() / stk_d.pop()); stk_d.push(v); }
+      else stk_d.push(Double.parseDouble(s));
+    }
+    System.out.println(stk_d.peek());
+  }
+}
+
+/*
+$ java InfixToPostfix | java EvaluatePostfix
+( (3 - 4) * 5 )
+-5.0
+*/
+```
+
+##### 1.3.14 实现一个动态分配数组大小的队列
+
+```java
+// Copyright [2018] <mituh>
+// ResizingArrayQueueOfStrings.java
+
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+public class ResizingArrayQueueOfStrings<Item> {
+  private int first;     // 队首元素索引
+  private int last;      // 指向队尾元素的下一个位置
+  private Item[] a;
+
+  public ResizingArrayQueueOfStrings() {    // 动态分配数组大小的构造函数
+    // Item[] a = (Item[]) new Object[1];   // why?又是相同的问题
+    a = (Item[]) new Object[1];
+    first = 0; last = 0;
+  }
+
+  // 判空
+  public boolean isEmpty()
+  {return first == last;}
+  public int size()
+  { return last - first;}
+
+  // 根据需要分配数组大小
+  private void resize(int max) {
+    Item[] temp = (Item[]) new Object[max];
+    for (int i = 0; i < size(); i++) {
+      temp[i] = a[i+first];      // 将队列的扩容缩容量的同时
+    }
+    a = temp;                    // a指向新的对象引用
+    last -= first;               // 整理至数组头部
+    first = 0;
+  }
+
+  public Item front() {
+    if (isEmpty()) throw new NoSuchElementException("Queue empty");
+    return a[first];
+  }
+
+  public void enqueue(Item e) {
+    if (last == a.length) {    // 队列的尾部满
+      resize(a.length * 2);    // 扩容两倍, 且利用数组前面的空间
+    }
+    a[last++] = e;
+  }
+
+  public Item dequeue() {
+    if (isEmpty()) throw new NoSuchElementException("Queue overflow");
+    Item e = a[first];
+    a[first++] = null;              // 游离被删除对象, first向后移动一位
+    if (size() == a.length / 4) {   // 删除后剩余空过多, 缩容
+      resize(a.length / 2);
+    }
+    return e;                       // 不清楚这样是不是会导致e指向null呢?
+  }
+}
+```
+
+#### Creative Problems
+
+##### 1.3.37 Josephus问题
+
+###### 题目:
+Josephus问题。在这个古老的问题中, N个身陷绝境的人一致同意通过以下的方式减少生存人数。他们围坐成一圈(位置记为0到N-1)并从第一个人开始报数, 报到M的人会被杀死, 直到最后一个人留下来。传说中Josephus找到了不会被杀死的位置。编写一个Queue的用例Josephus, 从命令行接受N和M并打印出人们被杀死的顺序(这也将显示Josephus在圈中的位置)。
+
+
+###### 输入:
+$ java Josephus 7 2
+
+###### 输出:
+1 3 5 0 4 2 6 
+
+
+###### 思路:
+
+交换不断交换两个队列, 直到所有元素出栈为止
+
+```java
+import java.util.Scanner;
+public class Josephus {
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    int N = read.nextInt();
+    int M = read.nextInt();
+    Queue<Integer> q1 = new Queue<Integer>();
+    Queue<Integer> q2 = new Queue<Integer>();
+    // Queue<Integer> q_ans = new Queue<Integer>();  // 直接打印储存
+    for (int i = 0; i < N; i++) { q1.enqueue(i);}
+    int num = 1, cnt = 0;
+    while (cnt != N) {
+      if (!q1.isEmpty()) {
+        if (num != M) { q2.enqueue(q1.dequeue()); num++; }   // q1队首出队, 进q2队
+        else {
+          System.out.print(q1.dequeue() + " ");
+          num = 1; cnt++;
+        }
+      } else {
+        if (num != M) { q1.enqueue(q2.dequeue()); num++; }   // q1队首出队, 进q2队
+        else {
+          System.out.print(q2.dequeue() + " ");
+          num = 1; cnt++;
+        }
+      }
+    }
+    System.out.println();
+  }
+}
+```
+
+###### 改进:
+<span style="color:red">但看了书中给出的解答之后, 大为吃惊, 他竟然在**头部出列,同时, 在尾部入列**</span>
+
+```java
+public class Josephus {
+  public static void main(String[] args) {
+    int N = Integer.parseInt(args[0]);
+	int M = Integer.parseInt(args[1]);
+	Queue<int> queue = new Queue<int> ();
+	for (int i = 0; i < N; i++) { queue.enqueue(i); }
+	while (!queue.isEmpty()) {
+	  for (int i = 0; i < m-1; i++) {
+	    queue.enqueue(queue.dequeue());   // 出列 同时 进列
+	  }
+	  System.out.print(queue.dequeue() + " ");
+	}
+	System.out.println();
+  }
+}
+```
+
+Output:
+```sh
+$ java Josephus 7 2
+1 3 5 0 4 2 6 
+```
+
+队列头进尾出的策略, 你理解了多少？
+
+###### Queue链表实现的注意点
+<span style="color:red"> 注意如下几个: </span>
+enqueue尾部插入
+> * 1, 旧尾结点用一个Node保存, last指向新的引用
+> * 2, last结点指向下一个null结点
+> * 3, 判空，if (first == null) first = last;
+> * 4, 非空, 上旧尾结点与新尾结点链接
+
+dequeue头部删除
+> * 1, 判空, 抛出异常
+> * 2, 保留返回值, first = first.next;删除结点
+> * 3, 判空, last = null; 若删除前只剩一个结点, first.next为空, 
+
+##### 1.3.42 复制栈 why?
+
+构造Node结点来实现复制Stack的构造函数, why?
+
+```java
+Node(Node x) { this.item = x.item; this.next = x.next; }   // 使用结点来复制栈
+```
+
+```java
+public Stack(Stack<Item> s) {
+    // 使用Node构造Stack
+    if (s.first != null) {
+      first = new Node(s.first);
+      for (Node x = first; x.next != null; x = x.next)
+        x.next = new Node(x.next);
+    }
+  }
+}  
+```
+
+##### 1.3.50 快速出错的迭代器
+
+用计数器记录push()和pop()的次数, 作为Iterator的实例变量
+```java
+private class ArrayStackIterator implements Iterator<Item> {
+    private Node current = first;
+    private int orig_pop = pop_n;
+    private int orig_push = push_n;
+    public boolean hasNext() {
+      if (pop_n != orig_pop || push_n != orig_push) {
+        throw new ConcurrentModificationException("Revise data in iteration");
+      }
+      return current != null;
+    }
+    public Item next() {
+      if (pop_n != orig_pop || push_n != orig_push) {
+        throw new ConcurrentModificationException("Revise data in iteration");
+      }
+      Item e = current.item;
+      current = current.next;
+      return e;
+    }
+    public void remove() {                          }
+  }
+```
+
+
+
+#### 1.3 练习小结
+
+完成了一些栈和队列的习题, 对栈和队列的链表构造记忆加深了, 也应用到了一些题中。
+但由于这星期的课程设置要完成1.5节, 所以把以下题目放到下星期学有余力去完成:
+
+> * 课本后链表的专项练习没做, 涉及到双向链表
+> * 提高题中还有几道那题不太能理解, 复制栈, 栈的可生成性
+> * 提高题中关于双向队列, 栈队列, 随机背包, 随机队列这些题还没实现,
+> * Web exercises 没做(这里有62题!!)
+
+这些题目是要回来继续做的, 但先对算法知识, 优先广度搜索。
+
