@@ -84,7 +84,7 @@ public class UF {
 即:
 
 union-find的成本模型。在研究实现union-find的API的各种算法时, 我们统计的是**访问任意数组元素的次数, 无论读写**
-
+	
 #### 1.5.2 实现
 
 讨论三种不同实现, 均以触点为索引的id[]数组来确定两个触点是否存在相同的连通分量中
@@ -107,3 +107,303 @@ public void union(int p, int q) {
 }
 ```
 
+
+##### 1.5.2.2 quick-union算法
+
+我的理解:
+<span style="color:red">通过归并两个触点的**根触点**, 去归并两个触点所属的**连通分量**。</span>
+此时相同的连通分量之间, 不是简单的标识符相等关系, 而是需要通过`链接`寻找根触点, 若根触点标识符相同, 则属于同个连通分量；
+反之, 如果根触点标识符不同, 需要union两个触点, 就只需要修改一个根触点a的下一个触点b, 这个时候, a不再是根触点, b同时成为p和q的根触点.
+
+这种算法通过寻找根触点的方法, `减少了很多对id数组的写操作`, 每次连接只需要修改一次, 在访问时, 虽然要根据链接到根触点, 但是这条链中, 除了同一连通量内的触点之外, 没有其他额外多余的结点了。
+
+```java
+  // 返回索引p的根触点的标识符
+  public int find(int p) {
+    while (p != id[p]) p = id[p];                // 当p指向它自己时, end loop, p是根结点
+    return p;                                    // 所有的子触点的标识符都是根触点的标识符
+  }
+
+  // 将p和q的根结点统一
+  public void union(int p, int q) {
+    // 将p和q归并到相同的分量中
+    int pRoot = find(p);
+    int qRoot = find(q);
+    
+    // 已经在相同分量中
+    if (pRoot == qRoot) return;
+
+    // 将p的根触点重新命名为q的根触点
+    id[pRoot] = qRoot;                          // 此时同一连通分量中, 存放的是索引, 形成了链接
+    --count;                                    // p.q连接后, 连通分量数-1
+  }
+```
+
+
+但这个解决连通性问题使用quick-union算法在最坏的情况下, 也是平方级别的...想象一下树根很深, 所有树都是在一个根触点上, 最终只得到一个分量的情况...
+
+
+**对树的定义**:
+> * 大小: 树的结点数量;
+> * 结点深度: 该结点到根结点你的路径上的连接数
+> * 高度: 它所有结点中的最大深度
+
+##### 1.5.2.3 加权quick-union算法
+
+quick-union算法的问题在于, 根触点在链接对象的选择上是随意的, 经常会把大树, 链接到小树上, 这样就加深了总体的树的长度, 造成了更多的访问次数。 为此, 提出一种加权quick-union算法, 当连通分量归并时, 只会把小树绑到大树上, 大树的根结点, 作为小树的新根结点.
+
+**具体的代码如下：**
+
+添加一个数组, 用于记录树中的结点数
+```java
+private int[] size;     // 实例变量记录每个触点的深度
+```
+
+构造函数中, 设置1为每个结点的初始深度
+```java
+{
+  public WeightedQuickUnionUF(int N) {
+    id = new int[N];
+    size = new int[N];
+    for (int i = 0; i < N; i++) {
+      id[i] = i;            // 每个触点只包含自己的分量
+      size[i] = 1;          // 每个结点初始深度为1
+    }
+    count = N;
+  }
+}
+```
+
+修改union方法, 将结点深度小的根结点, 重新命名为深度较大的根结点
+```java
+{
+  public void union(int p, int q) {
+    // 将p和q归并到相同的分量中 -> 将p和q的根结点统一
+    int pRoot = find(p);
+    int qRoot = find(q);
+    
+    // 已经在相同分量中
+    if (pRoot == qRoot) return;
+
+    // 将结点深度小的根结点, 重新命名为深度较大的根结点
+    if (size[pRoot] < size[qRoot]) { size[qRoot] += size[pRoot]; id[pRoot] = qRoot;}
+    else                           { size[pRoot] += size[qRoot]; id[qRoot] = pRoot;}
+    
+    // 将p的根触点重新命名为q的根触点(quick-union)
+    // id[pRoot] = qRoot;                          // 此时同一连通分量中, 存放的是索引, 形成了链接
+
+    /*
+    // 将p的分量名重新命名为q的名称(quick-find)
+    for (int i = 0; i < id.length; i++) {
+      if (id[i] == pID) { id[i] = qID; }          // 归并为一个分量
+    }
+    */
+    --count;                                      // p.q连接后, 连通分量数-1
+  }
+}
+```
+
+在这种算法下, 实际应用中, 只有一个结点的数被归并到更大的书中的情况很常见, 这样该结点到根结点的距离也只有一条链接而已.
+
+##### 1.5.2.8 三种情况的比较和最优算法
+
+|算法                 |构造函数     |union()   |  find()|
+|--------------------|------------|----------|--------|
+|quick-find算法       |N           |N         |1       |
+|quick-union算法      |N           |树的高度   |树的高度 |
+|加权quick-union算法   |N           |lgN      | lgN    |
+|路径压缩加权          |N           | 非常接近1 | 非常接近1|
+|理想情况             |N           | 1        | 1       |
+
+
+路径压缩加权是指, 在理想情况下, 希望每个结点都之间链接到根结点, 
+方法就是检查结点的同时, 同时将他们直接链接到根结点.
+
+要实现它， 只需要为find()添加一个循环, 将在路径上遇到的所有结点都直接链接到根结点。
+
+但实际情况下, 已经不存在对quick-union的更多改进..
+
+##### 1.5.2.9 分摊成本图像
+
+结合着练习1.5.16绘制分摊成本的图像, 
+
+处理第i个连接时, 用一个变量cost记录期间访问数组的次数, 并用一个变量total记录到目前为止的总次数, 在(i, cost)画出灰点, 在(i, total / i)画红点
+
+两个思路, 是放在main函数里, 还是放在QuickFindUF类里面定义实例变量
+
+1, 如果定义在类中的话, 怎么识别是哪次union (i不确定), 
+先在main函数中定义
+
+2, 在main函数中定义, 又不能看到对象内部的访问数组情况, 因此还是得在类中定义, 写一个开始和结束的方法, 求cost就是返回这两个方法之间的访问次数差,  求total就是先在循环外部调用start()方法, 在每个循环结束时, 调用end()?
+
+```
+连通性问题的三个算法，画图测试了一下, 一共有900组左右数据, 灰点代表当前这组数据, 在这个算法下, 对数组要访问（读和写）的次数；红点代表，从第一组数据当当前这组数据，一共加起来对数组的访问的次数/之前一共有多少组数据（也就是拼摊的访问次数）。
+
+三张图分别代表三个算法，第一个图的y值是-2000, 2000; 2, 3图的y值都是-100, 100，也就是每组数据运算, 控制在100次以内。。
+```
+
+
+
+
+#### Exercises
+
+#### Creative Problems
+
+##### 1.5.12 实现路径压缩的quick-union算法
+
+在find()方法中, 将从p到根结点的路径上的每个触点都连接到根结点, 修改后给出一列输入, 使该方法能够产生一列长度为4的路径。
+
+我自己的实现:
+```java
+{
+  public int find(int p) {
+    int[] nodes = new int[id.length];
+    int n = 0;
+    while (p != id[p]) {
+      nodes[n++] = p;
+      p = id[p];
+    }
+    int root = p;
+    for (int i = 0; i < n-1; i++) {    // n-1个本来就是根结点的直接子结点
+      id[nodes[i]] = root;
+    }
+    return root;
+  } 
+}
+```
+
+网站上给出的实现, 省去了新数组的创建, <span style="color:red">注意这段新插入while循环结点更新顺序很有意思</span>
+```java
+{
+  public int find(int p) {
+    int root = id[p];
+    while (root != id[root]) {root = id[root];}       // 只是为了找到根结点
+    while (p != root) {                 // 当初始结点到根结点过程中, 各个结点
+      int newP = id[p];                 // 保存p的原来的下个结点
+      id[p] = root;                     // 更新p的下个结点
+      p = newP;                         // p更新为原来的下个结点
+    }
+    return root;
+  }
+}
+```
+
+至于这个长度为4的路径我是这样给的
+```sh
+10
+0 1
+0 2
+0 3
+0 4
+```
+
+这样只减少一个连通分量, 该连通分量有两个结点, 错误.
+
+```sh
+1 0
+2 0
+3 0
+4 0
+```
+
+这样会生成一棵四叉树, 错误.
+
+我认为生成不了一条长度为4的路径
+
+##### 1.5.13 实现路径压缩加权的quick-union算法
+
+加权版本, 仍旧要求我去给出建立长度为4路径的输入
+
+注意, 在find()方法中, 将路径上的结点链接到根结点的操作, 要更新这些结点的深度为1
+
+对于路径压缩来说, 核心问题还是find()对每个结点链到根结点的操作
+```java
+{
+  public int find(int p) {
+    int root = id[p];
+    while (root != id[root]) {root = id[root];}       // 只是为了找到根结点
+    while (p != root) {                 // 当初始结点到根结点过程中, 各个结点
+      int newP = id[p];                 // 保存p的原来的下个结点
+      id[p] = root;                     // 更新p的下个结点
+      size[p] = 1;                      // 更新完成后的结点深度为1
+      p = newP;                         // p更新为原来的下个结点
+    }
+    return root;
+  }
+}
+```
+
+
+对于加权来说, 关键在于定义size实例变量和归并union()中比较两棵树的结点数量
+
+```java
+private int[] size;
+```
+
+```java
+public WeightedQuickUnionPathCompressionUF(int N) {
+    id = new int[N];
+    size = new int[N];
+    for (int i = 0; i < N; i++) {
+      id[i] = i;
+      size[i] = 1;
+    }
+    count = N;
+  }
+```
+
+```java
+{
+  public void union(int p, int q) {
+    if (connected(p, q)) return;   // 在判断connected时, 已将子结点与根连接直接相连
+    int pRoot = find(p);           // 查找次数
+    int qRoot = find(q);
+
+    // 将q的根触点, 作为p的根触点
+    if (size[pRoot] < size[qRoot]) {size[qRoot] += size[pRoot]; id[pRoot] = qRoot;}
+    else                           {size[pRoot] += size[qRoot]; id[qRoot] = pRoot;}
+    count--;
+  }
+}
+```
+
+另外一个问题, 这个size(), 比较的是结点的深度还是广度呢? 如果是结点深度的话, 应该是要记录深度最大的作为更结点的size()， 广度的话就是要记录更结点直接连着的子结点数。
+这里分析下来, 应该只是简单的结点数量。
+
+##### 1.5.14 根据高度加权的quick-union算法
+
+上一道题中, 我已经讨论了是根据深度加权(树的最大深度), 还是根据广度加权(子结点数量).
+
+这道题就要求, 根据高度加权, 但记录的是树的高度总是将较矮的树, 记录到较高的树上.
+
+思路是:
+<span style="color:red">在保留size数组存放结点数量的基础上, 加入height数组, 存放根结点的高度.</span>
+//  WeightedQuickUnionByHeightUF.java
+```java
+int[] height;
+```
+
+```java
+for (int i = 0; i < N; i++) {
+  height[i] = 0;
+}
+```
+
+```java
+// 两棵树高度不等, 合并不会增加树的高度, 因为是合并到根结点上, 合起来不会超过当前高度
+if      (height[pRoot] < height[qRoot]) {id[pRoot] = qRoot; size[qRoot] += size[pRoot];}
+else if (height[pRoot] > height[qRoot]) {id[qRoot] = pRoot; size[qRoot] += size[pRoot];}
+else {   // 两棵树高度相等
+  if (size[pRoot] < size[qRoot]) {   // 仍旧按照结点数量决定合并主次
+    id[pRoot] = qRoot; size[qRoot] += size[pRoot]; 
+    height[qRoot]++;                 // 合到q上, q增高
+  } else {
+    id[qRoot] = pRoot; size[pRoot] += size[qRoot]; 
+    height[pRoot]++;                 // 合到p上, p增高
+  }
+}
+```
+
+书本网站给出的代码, 在高度一样时, 没考虑结点数量问题, 应该是为了根据规模量而不用去判断结点数量, 简化算法, 但我仍旧觉得会出现深度b与a一样, 结点数a却并b多很多的情况, 这时候, 如果把a简单绑在b上, 恐怕不合理.
+
+##### 1.5.14 根据高度加权的quick-union算法
