@@ -406,4 +406,257 @@ else {   // 两棵树高度相等
 
 书本网站给出的代码, 在高度一样时, 没考虑结点数量问题, 应该是为了根据规模量而不用去判断结点数量, 简化算法, 但我仍旧觉得会出现深度b与a一样, 结点数a却并b多很多的情况, 这时候, 如果把a简单绑在b上, 恐怕不合理.
 
-##### 1.5.14 根据高度加权的quick-union算法
+##### 1.5.16 均摊成本图像
+结合着练习1.5.16绘制分摊成本的图像, 
+
+处理第i个连接时, 用一个变量cost记录期间访问数组的次数, 并用一个变量total记录到目前为止的总次数, 在(i, cost)画出灰点, 在(i, total / i)画红点
+
+两个思路, 是放在main函数里, 还是放在QuickFindUF类里面定义实例变量
+
+1, 如果定义在类中的话, 怎么识别是哪次union (i不确定), 
+先在main函数中定义
+
+2, 在main函数中定义, 又不能看到对象内部的访问数组情况, 因此还是得在类中定义, 写一个开始和结束的方法, 求cost就是返回这两个方法之间的访问次数差,  求total就是先在循环外部调用start()方法, 在每个循环结束时, 调用end()?
+
+我的实现:
+```java
+// 实现quick-find算法, 并画出分摊成本图像
+
+import java.util.Scanner;
+public class QuickFindUF {
+
+  private int[] id;
+  private int count;
+  private long visit;
+  public QuickFindUF(int n) {
+    id = new int[n];
+    for (int i = 0; i < n; i++) {
+      id[i] = i;     // 每个触点独立成为一个连通分量
+    }
+    count = n;
+    visit = 0;       // 构造时, 访问数组的次数清空
+  }
+
+  // 返回连通分量计数
+  public int count() { return count;}
+
+  // 返回索引为p的触点, 所属的连通分量
+  public int find(int p) {
+    visit++;
+    return id[p];
+  }
+
+  // 触点p和触点q是否已经连接
+  public boolean connected(int p, int q) {
+    // 判断p, f是否相连, 是否属于同一个连通分量   // 是否是同一个根结点
+    return find(p) == find(q);
+  }
+
+  // 连接触点p和q
+  public void union(int p, int q) {
+    int pID = find(p);
+    int qID = find(q);
+    if (pID == qID) return;
+    for (int i = 0; i < id.length; i++) {
+      visit++;        // id[i]访问一次
+      if (id[i] == pID) {
+        id[i] = qID;        // 将与p相同的连通分量, 都改为q的连通分量
+        visit++;      // id[i]重新访问一次
+      }
+    }
+    --count;
+  }
+
+  public long getVisit() {
+    // 返回当前visit的值
+    return visit;
+  }
+
+  public void setDraw(int max_x, int max_y) {
+    StdDraw.setXscale(0, max_x);
+    StdDraw.setYscale(-max_y, max_y);
+    StdDraw.setPenRadius(.003);
+  }
+  
+  public void drawCost(int i, long cost) {
+    // 画出(i, cost)这个点, 灰色
+    StdDraw.setPenColor(StdDraw.GRAY);
+    StdDraw.point(i, cost);
+  }
+
+  public void drawTotal(int i, long total) {
+    // 画出(i, total/i) 红色
+    StdDraw.setPenColor(StdDraw.RED);
+    StdDraw.point(i, (double)total / i);
+  }
+  
+  public static void main(String[] args) {
+    Scanner read = new Scanner(System.in);
+    int N = read.nextInt();
+    QuickFindUF uf = new QuickFindUF(N);
+
+    int i = 1;
+    long total = 0;
+    long cost = 0;
+    uf.setDraw(N, 2000);
+
+    while (read.hasNext()) {
+      int p = read.nextInt();
+      int q = read.nextInt();
+      if (uf.connected(q, p)) continue;
+
+      cost = uf.getVisit();                // 调用union之前的计数
+// System.out.println(cost);
+      uf.union(p, q);                      // 注意与union(p, q)的区别
+      total  = uf.getVisit();              // 总的计数
+      cost = total - cost;                 // union调用后改变的计数
+      uf.drawCost(i, cost);
+      uf.drawTotal(i, total);
+
+      System.out.println(p + " " + q);
+      i++;
+    }
+    System.out.println(uf.count() + " components");
+  }
+}
+```
+
+
+画完图后的小总结:
+
+```
+连通性问题的三个算法，画图测试了一下, 一共有900组左右数据, 灰点代表当前这组数据, 在这个算法下, 对数组要访问（读和写）的次数；红点代表，从第一组数据当当前这组数据，一共加起来对数组的访问的次数/之前一共有多少组数据（也就是拼摊的访问次数）。
+
+三张图分别代表三个算法，第一个图的y值是-2000, 2000; 2, 3图的y值都是-100, 100，也就是每组数据运算, 控制在100次以内。。
+```
+
+
+##### 1.5.17 随机连接
+
+连接在图中, 叫做 边(edge);
+可以通过多做几次实验, 观察一下数据。
+```java
+public class ErdosRenyi {
+
+  public static int count(int n) {
+    UF uf = new UF(n);
+    int edge = 0;
+    while (uf.count() > 1) {
+      int p = StdRandom.uniform(n);
+      int q = StdRandom.uniform(n);
+      uf.union(p, q);
+      edge++;
+    }
+    return edge;
+  }
+  
+  public static void main(String[] args) {
+    int N = Integer.parseInt(args[0]);
+    int trails = Integer.parseInt(args[1]);
+    int[] edges = new int[trails];
+    for (int i = 0; i < trails; i++) {    // N个数实验trails次
+      edges[i] = count(N);                // 得到每次的连接数(edge)
+    }
+    System.out.println("1 / 2 n ln n  = " + 0.5 * N * Math.log(N));
+    System.out.println("mean          = " + StdStats.mean(edges));
+    System.out.println("stddev        = " + StdStats.stddev(edges));
+  }
+}
+```
+
+测试数据:
+```sh
+$ java ErdosRenyi 100 50
+1 / 2 n ln n  = 230.25850929940458
+mean          = 257.88
+stddev        = 52.002605900167765
+
+$ java ErdosRenyi 1000 50
+1 / 2 n ln n  = 3453.8776394910683
+mean          = 3743.16
+stddev        = 609.597537356427
+
+$ java ErdosRenyi 10 50
+1 / 2 n ln n  = 11.51292546497023
+mean          = 16.1
+stddev        = 4.2051960084385795
+$ java ErdosRenyi 10 100
+1 / 2 n ln n  = 11.51292546497023
+mean          = 15.69
+stddev        = 6.112902400462137
+$ java ErdosRenyi 10 100
+1 / 2 n ln n  = 11.51292546497023
+mean          = 16.82
+stddev        = 5.85408430331363
+java ErdosRenyi 100 100
+1 / 2 n ln n  = 230.25850929940458
+mean          = 265.5
+stddev        = 61.21290878581251
+java ErdosRenyi 100 10
+1 / 2 n ln n  = 230.25850929940458
+mean          = 271.4
+stddev        = 66.31272711763388
+
+$ java ErdosRenyi 1000 100
+1 / 2 n ln n  = 3453.8776394910683
+mean          = 3745.5
+stddev        = 549.594552117442
+$ java ErdosRenyi 100000 100
+1 / 2 n ln n  = 575646.2732485115
+mean          = 607449.34
+stddev        = 66257.3861064637
+````
+
+附上一份UF实现
+```java
+import java.util.Scanner;
+public class UF {
+  private int[] id;
+  private int[] size;
+  private int count;      // 连通量
+
+  public UF(int N) {
+    id = new int[N];
+    size = new int[N];
+    for (int i = 0; i < N; i++) {
+      id[i] = i;
+      size[i] = 1;
+    }
+    count = N;
+  }
+
+  public int count() { return count;}
+  public boolean connected(int p, int q) { return find(p) == find(q); }
+
+  public int find(int p) {
+    int root = id[p];
+    while (root != id[root]) {root = id[root];}       // 只是为了找到根结点
+    while (p != root) {                 // 当初始结点到根结点过程中, 各个结点
+      int newP = id[p];                 // 保存p的原来的下个结点
+      id[p] = root;                     // 更新p的下个结点
+      size[p] = 1;                      // 更新完成后的结点深度为1
+      p = newP;                         // p更新为原来的下个结点
+    }
+    return root;
+  }
+
+  public void union(int p, int q) {
+    if (connected(p, q)) return;   // 在判断connected时, 已将子结点与根连接直接相连
+    int pRoot = find(p);           // 查找次数
+    int qRoot = find(q);
+
+    // 将q的根触点, 作为p的根触点
+    if (size[pRoot] < size[qRoot]) {size[qRoot] += size[pRoot]; id[pRoot] = qRoot;}
+    else                           {size[pRoot] += size[qRoot]; id[qRoot] = pRoot;}
+    count--;
+  }
+
+  public String toString() {
+    String s = new String();
+    for (int i = 0; i < id.length; i++) {
+      s += id[i]; s += " ";
+    }
+    return s;
+  }
+}
+```
