@@ -38,11 +38,11 @@ public class PercolationVisualizer {
         int opened = 0;
         for (int row = 1; row <= n; row++) {
             for (int col = 1; col <= n; col++) {
-                if (perc.isFull(row-1, col-1)) {
+                if (perc.isFull(row, col)) {
                     StdDraw.setPenColor(StdDraw.BOOK_LIGHT_BLUE);
                     opened++;
                 }
-                else if (perc.isOpen(row-1, col-1)) {
+                else if (perc.isOpen(row, col)) {
                     StdDraw.setPenColor(StdDraw.WHITE);
                     opened++;
                 }
@@ -76,7 +76,7 @@ public class PercolationVisualizer {
         while (!in.isEmpty()) {
             int i = in.readInt();
             int j = in.readInt();
-            perc.open(i-1, j-1);
+            perc.open(i, j);
             draw(perc, n);
             StdDraw.show();
             StdDraw.pause(DELAY);

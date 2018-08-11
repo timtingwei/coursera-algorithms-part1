@@ -33,54 +33,34 @@ public class Percolation {
     open[p] = true;
     openSites++;
     // union, 0, 1, 2, 3 or 4次
-    if (row == 0) {              // 最上一行
-      full[p] = true;
-      if (isOpen(row+1, col)) {
-        uf.union(p, p+n);
-        full[p+n] = true;                          // 下格无论什么情况都有水
-      }
-    } else if (row == n-1) {     // 最下行
-      if (isOpen(row-1, col)) {
-        uf.union(p, p-n);
-        if (isFull(row-1, col)) {full[p] = true;}         // 上个格子有水, 这个也有水
-      }
-    } else {                    // 中间行
-      if (isOpen(row+1, col)) {
-        uf.union(p, p+n);
-        if (isFull(row+1, col)) {full[p] = true;}         // 下个格子有水, 这个也有水
-      }
-      if (isOpen(row-1, col)) {
-        uf.union(p, p-n);
-        if (isFull(row-1, col)) {full[p] = true;}         // 上个格子有水, 这个也有水
-      }
+    if (row == 0) {         // 最上一行
+      if (isOpen(row+1, col)) { uf.union(p, p+n);}
+    } else if (row == n-1) {
+      if (isOpen(row-1, col)) { uf.union(p, p-n);}
+    } else {
+      if (isOpen(row+1, col)) { uf.union(p, p+n);}
+      if (isOpen(row-1, col)) { uf.union(p, p-n);}
     }
 
-    if (col == 0) {            // 最左列
-      if (isOpen(row, col+1)) {
-        uf.union(p, p+1);
-        if (isFull(row, col+1)) {full[p] = true;}         // 右格有水, 这个格子也有
-      }
+    if (col == 0) {
+      if (isOpen(row, col+1)) { uf.union(p, p+1);}
     } else if (col == n-1) {
-      if (isOpen(row, col-1)) {
-        uf.union(p, p-1);
-        if (isFull(row, col-1)) {full[p] = true;}         // 左格有水, 这个格子也有
-      }
+      if (isOpen(row, col-1)) { uf.union(p, p-1);}
     } else {
-      if (isOpen(row, col+1)) {
-        uf.union(p, p+1);
-        if (isFull(row, col+1)) {full[p] = true;}         // 右格有水, 这个格子也有
-      }
-      if (isOpen(row, col-1)) {
-        uf.union(p, p-1);
-        if (isFull(row, col-1)) {full[p] = true;}         // 左格有水, 这个格子也有
-      }
+      if (isOpen(row, col+1)) { uf.union(p, p+1);}
+      if (isOpen(row, col-1)) { uf.union(p, p-1);}
     }
+    isFull(row, col);  // 只要根结点是top, 就能自己转成true
   }
   public boolean isOpen(int row, int col) {  // is site (row, col) open?
-    return open[row * n + col];
+    return open[row*n+col];
   }
   public boolean isFull(int row, int col) {  // is site (row, col) full?
-    return full[row * n + col];
+    if (uf.connected(row*n + col, top)) {
+      full[row*n + col] = true;
+      return true;
+    }
+    return false;
   }
   public     int numberOfOpenSites() {       // number of open sites
     return openSites;
@@ -103,10 +83,9 @@ public class Percolation {
       int c = read.nextInt();
       percolation.open(r-1, c-1);
     }
-    // */
     System.out.println(percolation.percolates());
     System.out.println(percolation.numberOfOpenSites());
-    // System.out.println("isFull " + percolation.isFull(3-1, 2-1));
+    System.out.println("isFull " + percolation.isFull(6-1, 2-1));
 
     
   }
