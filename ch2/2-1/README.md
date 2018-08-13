@@ -443,3 +443,112 @@ For 10000 random Double
 解决一个排序问题, 却没有排序函数可用的话, 可以先用希尔排序, 然后在考虑是否值得将它替换为更复杂的排序算法.
 
 也就是说, 还有更高效的排序算法, 在希尔排序之后出来, 因此希尔排序是慢排序和现代排序的分界线。
+
+
+#### Exercises
+
+##### 2.1.1 选择排序轨迹图
+
+```
+       E A S Y Q U E S T I O N
+i min  E A S Y Q U E S T I O N
+0  1    ·
+i min A E S Y Q U E S T I O N
+1  1    ·
+i min A E S Y Q U E S T I O N
+2  6              ·
+i min A E E Y Q U S S T I O N
+3  9                    ·
+i min A E E I Q U S S T Y O N
+4  11                       ·
+i min A E E I N U S S T Y O Q
+5  10                     ·
+i min A E E I N O S S T Y U Q
+6  11                       ·
+i min A E E I N O Q S T Y U S
+7  7                ·
+i min A E E I N O Q S T Y U S
+8  11                       ·
+i min A E E I N O Q S S Y U T
+9  11                       ·
+i min A E E I N O Q S S T U Y
+10 10                     ·
+i min A E E I N O Q S S T U Y
+11 11                       ·
+```
+
+
+##### 2.1.2 选择排序最多交换和平均交换
+
+/* 最多 n-1次,  9 0 1 2 3 4 5 6 7 8 (如果最后一次自交换不算的话) 注意, 最后一次不能不算 */
+
+最多 n次,  9 0 1 2 3 4 5 6 7 8
+平均 1次,  n个元素交换n次
+
+平均比较是: (N^2)/2次
+
+最后一次不能不算的原因,
+```java
+// ...
+int min = i;
+for (int j = i+1; j < N; j++) 
+  if (less(a[j], a[min])) min = j;
+exch(a, i, min);  // 即使这里min=i, 仍旧会交换
+```
+
+##### 2.1.4 插入排序轨迹
+
+```
+      0 1 2 3 4 5 6 7 8 9 1011
+      E A S Y Q U E S T I O N
+i  j  A E S Y Q U E S T I O N
+1  0  ·
+i  j  A E S Y Q U E S T I O N
+2  2      ·
+i  j  A E S Y Q U E S T I O N
+3  3        ·
+i  j  A E Q S Y U E S T I O N
+4  2      ·
+i  j  A E Q S U Y E S T I O N
+5  4          ·
+i  j  A E E Q S U Y S T I O N
+6  2      ·
+i  j  A E E Q S S U Y T I O N
+7  5            ·
+i  j  A E E Q S S T U Y I O N
+8  6              ·
+i  j  A E E I Q S S T U Y O N
+9  3        ·
+i  j  A E E I O Q S S T U Y N
+10 4          ·
+i  j  A E E I N O Q S S T U Y 
+11 4          ·
+```
+
+##### 2.1.6 对与所有的主键都相同时, 选择排序和插入排序谁更快?
+
+插入排序。插入排序内层循环条件在主键相同时, 不会执行；而选择排序, 每一次内循环出来, 一定会有一个min索引进行交换.
+
+<span style="color:red">选择排序对有序数组的仍旧是平方级别的, 但插入排序却是线性的</span>
+
+##### 2.1.8 假设元素只有三种值, 使用插入排序处理这样一个随机数组的运行时间是线性的还是平方级别的？或是介于两者之间?
+
+平方级别的.
+
+插入排序对随机的数列, 运行时间是平方级别的; 对有序数列, 是线性的.
+
+##### 2.1.9 希尔排序的轨迹图
+
+N=21,
+
+h = 13, 4, 1;
+
+先跳着13格插入排序, 再跳着4格插入排序, 最后跳着1格(正常插入排序)
+
+
+##### 2.1.10 为什么希尔排序在实现h有序时, 不用选择排序
+
+因为插入排序在输入数组部分有序时, 效率高。
+
+
+排序之初, 子数组都很短, 排序之后, 子数组都是部分有序。
