@@ -15,3 +15,7 @@
 ### 1.4 算法分析
 
 [1-4 notes & codes](https://github.com/timtingwei/coursera-algorithms-part1/tree/master/ch1/1-4)
+
+### 1.5 quick-union案例
+
+[1-5 quick-union](https://github.com/timtingwei/coursera-algorithms-part1/tree/master/ch1/1-5)

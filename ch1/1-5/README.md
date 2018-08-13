@@ -660,3 +660,173 @@ public class UF {
   }
 }
 ```
+
+
+#### Web Exercises
+
+##### 2 判断一个数组是否满足加权路径其中某个时刻的状态
+```java
+a 0 1 2 3 4 5 6 7 8 9
+b 7 3 8 3 4 5 6 8 8 1
+c 6 3 8 0 4 5 6 9 8 1
+d 0 0 0 0 0 0 0 0 0 0
+e 9 6 2 6 1 4 5 8 8 9
+f 9 8 7 6 5 4 3 2 1 0
+```
+
+```sh
+A可以, 初始值
+B不行, 结点超过2
+C不行, 结点超过2
+D可以, 0为根结点, 其他均为它的子结点, 是路径压缩的最理想情况
+E不行, 1->6->5->4->1...
+F不行, 0->9->0
+```
+
+##### 3, 路径压缩算法使用递归
+```java
+public int find(int p) {
+  while (p != id[p]) {
+    id[p] = find(id[p]);
+  }
+}
+```
+
+
+##### 4, Path Halving
+
+```sh
+0 -> 1 -> 2 -> 3 -> 4 -> 5
+
+halving:
+0 -> 2 -> 4 -> 5
+    /    /
+   1    3
+
+splitting:
+0 -> 2 -> 4 -> 5
+1 -> 3 -> 5
+```
+
+```java
+while (p != parent[p]) {
+  parent[p] = parent[parent[p]];
+  p = parent[p];
+}
+```
+
+##### 5, Path Splitting
+```java
+while (p != parent[p]) {
+  int next = parent[p];
+  parent[p] = parent[next];
+  p = next;
+}
+```
+
+##### 6. Random quick union.
+
+将quick-union改写, N个元素中, 生成[0,N-1]不规则的随机数, 当归并两个根结点时, 总是将label小的归并到label大的根结点上
+
+```java
+{
+  public RandomQuickUnionUF(int N) {
+    parent = new int[N];
+    label = new int[N];
+    for (int i = 0; i < N; i++) {
+      parent[i] = i;
+      label[i] = (int)Math.random() * N;
+    }
+    count = N;
+  }
+
+
+  public void union(int p, int q) {
+    int pRoot = find(p);
+    int qRoot = find(q);
+    if (pRoot == qRoot) return;
+
+    if (label[pRoot] < label[qRoot]) { parent[pRoot] = qRoot; }
+    else                             { parent[qRoot] = pRoot; }
+    count--;
+  }
+}
+```
+
+
+
+#### Programming Assignment
+
+percolation
+> * Percolation.java 
+> * PercolationStats.java
+
+渗滤模型的仿真Moneto Carlo simulation(应用)需要用到quick-union(算法)
+
+检查最下一行的任意一位, 是否和最上一行的任何一个位连通
+若上下每个位置, 一一对应检查的话, 就是一个N^2的暴力求解 
+在最上和最下设置一个虚拟位置, virtual top site和 virtual bottom site, 检查是否渗滤, 只检查虚拟顶位和虚拟底位是否连通, 
+
+```java
+// 不改变full的版本
+public    void open(int row, int col) {    // open site (row, col) if it is not open already
+    if (isOpen(row, col)) return;
+    int p = row * n + col;
+    open[p] = true;
+    openSites++;
+    // union, 0, 1, 2, 3 or 4次
+    if (row == 0) {         // 最上一行
+      if (isOpen(row+1, col)) { uf.union(p, p+n);}
+    } else if (row == n-1) {
+      if (isOpen(row-1, col)) { uf.union(p, p-n);}
+    } else {
+      if (isOpen(row+1, col)) { uf.union(p, p+n);}
+      if (isOpen(row-1, col)) { uf.union(p, p-n);}
+    }
+
+    if (col == 0) {
+      if (isOpen(row, col+1)) { uf.union(p, p+1);}
+    } else if (col == n-1) {
+      if (isOpen(row, col-1)) { uf.union(p, p-1);}
+    } else {
+      if (isOpen(row, col+1)) { uf.union(p, p+1);}
+      if (isOpen(row, col-1)) { uf.union(p, p-1);}
+    }
+    // full??
+  }
+  
+```
+
+
+搞不清楚, empty()和full()之间存在多少差距?
+
+full()如果代表有水的话, 那它与top是相连的
+
+这道题里, 我个人认为最难的就是n和n-1之间的关系, 我平时从0开始索引, 它突然从1开始索引, 我该怎么转换呢?
+
+我将所有变量改成从0开始索引之后, 放弃, 这道题让我很烦. 为什么不能好好的从0开始索引呢.
+
+```java
+
+    if (col == 0) {            // 最左列
+      if (isOpen(row, col+1)) {
+        uf.union(p, p+1);
+        // if (isFull(row, col+1)) {full[p] = true;}         // 右格有水, 这个格子也有
+      }
+    } else if (col == n-1) {
+      if (isOpen(row, col-1)) {
+        uf.union(p, p-1);
+        // if (isFull(row, col-1)) {full[p] = true;}         // 左格有水, 这个格子也有
+      }
+    } else {
+      if (isOpen(row, col+1)) {
+        uf.union(p, p+1);
+        // if (isFull(row, col+1)) {full[p] = true;}         // 右格有水, 这个格子也有
+      }
+      if (isOpen(row, col-1)) {
+        uf.union(p, p-1);
+        // if (isFull(row, col-1)) {full[p] = true;}         // 左格有水, 这个格子也有
+      }
+    }
+	
+```
