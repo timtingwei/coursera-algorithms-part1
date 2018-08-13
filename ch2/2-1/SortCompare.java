@@ -23,7 +23,6 @@ public class SortCompare {
         a[j] = StdRandom.uniform();
       total += time(alg, a);
     }
-    System.out.println(total);
     return total;
   }
 
