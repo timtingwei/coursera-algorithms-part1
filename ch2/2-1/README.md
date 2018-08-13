@@ -231,6 +231,151 @@ i从左向右移动过程中, 左侧元素总是有序的, 当i到达数组最�
 ```
 
 提高插入排序的速度的方法, 将数组中较大的元素都向右移动, 这样访问数组的次数就能减半. ex2.1.25
+```java
+// .. 向右边移动, 代替交换, 难道移动不是交换吗？暂时不很理解
+```
+
 
 插入排序是其他一些高级排序算法的中间过程.
 
+
+
+#### 2.1.4 排序算法的可视化
+
+使用StdDraw来来绘制棒状图, 而不是打印结果的show()方法. 练习2.1.18
+```java
+public static void show() {}
+```
+
+将轨迹变成动画, 2.1.17
+```java
+public static void show() {}
+```
+
+通过轨迹可以看出, 
+> * 插入排序只访问索引左侧元素, 不访问右侧元素
+> * 选择排序只访问索引右侧元素, 不访问左侧元素
+
+#### 2.1.5 比较两种排序算法
+
+这一节介绍了SortCompare, 学会这套方法后, 对渐进式的算法研究十分重要, 能够通过这类程序, 来了解改进后的算法的性能是否产生了新的预期进步.
+
+比较两个算法的方法:
+> * 实现并调试它们
+> * 分析它们的基本性质
+> * 对它们的相对性能作出猜想
+> * 用实验验证我们的猜想
+
+**只有研究那些最重要的算法的专家才会经历完整的研究过程, 但每个使用算法的程序员都应该了解算法的性能特性背后的科学过程.**
+
+```
+命题A: 对于长度为N的数组, 选择排序需要大约 (N^2)/2 次比较 和 N次交换
+命题B: 对于随机排列的长度为N且主键不重复的数组, 平均情况下插入排序需要~(N^2)/4次比较, -(N^2)/4交换, 最坏情况下需要~(N^2)/2次比较 和 ~(N^2)/2交换, 最好情况下需要N-1次比较和0次交换
+命题C: 插入排序需要的 交换操作 和 数组中倒置的数量相同, 需要的比较操作次数大于等于倒置的数量, 小于等于倒置的数量+数组长度-1
+```
+
+
+```
+命题D: 对随机排序的无重复主键的数组, 插入排序和选择排序的运行时间是平方级别的, 两者只比应该是个常数
+```
+
+
+time()函数中, 用可以调用不同的排序算法, 然后用Stopwatch来记录时间
+
+Stopwatch类的核心就是调用System.currentTimeMillis(), 利用两次打点的差/1000得到秒数(millis是毫秒的意思)
+
+```java
+public class Stopwatch {
+  private long start;
+  public Stopwatch() {
+    start = System.currentTimeMillis();
+  }
+  public double elapsedTime() {
+    long now = System.currentTimeMillis();
+    return (now-start) / 1000.0;
+  }
+}
+```
+
+```java
+public class SortCompare {
+   public static double time(String alg, Double[] a) {
+     Stopwatch timer = new Stopwatch();
+     if (alg.equals("Insertion")) Insertion.sort(a);
+     if (alg.equals("Selection")) Selection.sort(a);
+     // if (alg.equals("Shell"))     Shell.sort(a);
+     // if (alg.equals("Merge"))     Merge.sort(a);
+     // if (alg.equals("Quick"))     Quick.sort(a);
+     // if (alg.equals("Heap"))      Heap.sort(a);
+   }
+}
+```
+
+
+实现两种算法比较后, Insertion反而更慢呢?
+```sh
+$ java SortCompare Insertion Selection 1000 10
+For 1000 random Double
+  Insertion is 0.7 times faster than Selection
+```
+
+<span style="color:red">应该time算的是总时间, 因此, t1比t2快多少倍, 应该用t2/t1来计算才对。</span>
+
+<span style="color:red">但是我在解决这个问题时, 对两个算法做了优化, 将在循环条件中求a.length改成在循环外部求N = a.length, 将循环条件替换, 少做了很多运算</span>
+
+下面是SortCompare类的代码
+```java
+// 实现多个排序算法之间的比较
+
+public class SortCompare {
+  public static double time(String alg, Double[] a) {
+    Stopwatch timer = new Stopwatch();
+    if (alg.equals("Insertion"))    Insertion.sort(a);
+    if (alg.equals("Selection"))    Selection.sort(a);
+    // if (alg.equals("Shell"))     Shell.sort(a);
+    // if (alg.equals("Merge"))     Merge.sort(a);
+    // if (alg.equals("Quick"))     Quick.sort(a);
+    // if (alg.equals("Heap"))      Heap.sort(a);
+    return timer.elapsedTime();
+  }
+
+  public static double timeRandomInput(String alg, int N, int T) {
+    // 使用算法alg对T个长度为N的数组排序
+    double total = 0.0;
+    Double[] a = new Double[N];
+    for (int t = 0; t < T; t++) {
+      for (int j = 0; j < N; j++)
+        a[j] = StdRandom.uniform();
+      total += time(alg, a);
+    }
+    return total;
+  }
+
+  public static void main(String[] args) {
+    String alg1 = args[0];
+    String alg2 = args[1];
+    int N = Integer.parseInt(args[2]);
+    int T = Integer.parseInt(args[3]);
+    double t1 = timeRandomInput(alg1, N, T);
+    double t2 = timeRandomInput(alg2, N, T);
+    System.out.printf("For %d random Double\n  %s is", N, alg1);
+    System.out.printf(" %.1f times faster than %s\n", t2/t1, alg2);
+  }
+}
+```
+
+```sh
+java SortCompare Insertion Selection 500 10
+For 500 random Double
+  Insertion is 1.6 times faster than Selection
+```
+无序的数组, 插入排序比选择排序快了1.7倍
+
+有些情况下, 主键有重复或者排列不随机, 需要用StdRandom.shuffle()来将一个数组打乱
+
+
+最后讲了, 学习初级算法的必要性:
+> * 它们帮助我们建立一些基本的规则
+> * 它们展示了一些性能的基准
+> * 在某些特殊情况下, 它们也是很好的选择
+> * 更强大开发的基石
