@@ -2,10 +2,11 @@
 // Selection.java
 
 public class Selection {
-  public static void sort(Comparable[] a) { 
-    for (int i = 0; i < a.length; i++) {         // 因为j=i+1, 内循环不会比较最后一个元素
+  public static void sort(Comparable[] a) {
+    int N = a.length;
+    for (int i = 0; i < N; i++) {         // 因为j=i+1, 内循环不会比较最后一个元素
       int min = i;
-      for (int j = i+1; j < a.length; j++) {     // 略去与自己的比较
+      for (int j = i+1; j < N; j++) {     // 略去与自己的比较
         if (less(a[j], a[min])) min = j;         // less抽象成方法
       }
       exch(a, i, min);
