@@ -552,3 +552,113 @@ h = 13, 4, 1;
 
 
 排序之初, 子数组都很短, 排序之后, 子数组都是部分有序。
+
+#### Creative Problems
+
+##### 18. 可视化轨迹
+思路:
+1, 用filledRectangle画出一组数列中的所有柱子, 然后暂停一会后clear();
+2, 全部写在show函数里, 跟刚才的打印信息的show()函数等价
+3, 因为Comparable类型无法计算出max和min之间有多少个层次, 我看了网站给出的答案, 发现它将Comparable改成了String类型, 晕倒..
+
+
+```
+public static void show(String[] a) {
+    
+    int max_p = 0, min_p = 0;
+    int N = a.length;
+    for (int i = 0; i < N; i++) {
+      if (less(a[max_p], a[i])) max_p = i;
+      if (less(a[i], a[min_p])) min_p = i;
+    }
+    String max = a[max_p]; String min = a[min_p];
+    // 如果没有重载运算符的话, 就需要计算出, key值最小元素和最大元素之间差几个档次,
+    // 答案的解决方法竟然是把Comparable改写成String, 当场晕倒
+    
+
+    double scale_x = 100; double scale_y = 100;
+    double max_x = scale_x * 0.6;                   // 所有柱形x方向上的总长
+    double max_y = max_x * 0.3;                     // 所有柱形y方向上的最大长度
+    double offset_scale = 0.5;                // 间距是棒宽的0.5倍
+    double width = max_x/(offset_scale*(N-1) + N);
+    double offset = (offset_scale+1) * width;     // 棒和棒的中心间距
+
+    double dist_h = (max_y - 0.1 * max_y) / (max.charAt(0) - min.charAt(0));      // 渐进的差值, 最短为0.1
+    double start_x = 0.2 * scale_x;
+    double start_y = 0.5 * scale_y;     // error
+    StdDraw.setXscale(0, scale_x);
+    StdDraw.setYscale(0, scale_y);
+    for (int i = 0; i < N; i++) {
+      double h = (a[i].charAt(0) - min.charAt(0)) * dist_h + (0.1 * max_y);
+      double half_width = width / 2;
+      double half_height = h / 2;
+      double center_x = start_x + i * offset;
+      double center_y = start_y + half_height;
+      StdDraw.filledRectangle(center_x, center_y, half_width, half_height);
+      StdDraw.pause(100);   // 暂停1s
+    }
+    StdDraw.pause(1000);
+    StdDraw.clear();
+  }
+```
+
+
+第二个版本要改进的地方:
+> * 1, 还没实现以排序好的数组作为棒状图的最终结果的要求
+> * 2, 没有将计算和绘图分离开来
+
+要实现1, 也就是说把draw的一些操作放到sort和main函数中去,
+实现2, 抽象出一个计算的函数, 在画图时调用, params是, 一个数组保存`center_x, center_y, half_width, half_height`, static void函数, 函数内部修改数组对象
+
+
+这个问题先放放, 等会回来先看看教授的思路, 然后想怎么把计算分离出来, 接口怎么设置。
+这个问题跟算法本质关系不大。
+
+
+##### 21. 将Transaction改写成可比较的数据类型
+
+```
+// Copyright [2018] <mituh>
+// Transaction.java
+// Dependencies: Date.java
+
+public class Transaction implements Comparable<Transaction> {
+  // ..
+  // 通过amount比较两笔交易
+  public int compareTo(Transaction that) {
+    return Double.compare(this.amount, that.amount);
+  }
+  // ..
+}
+```
+
+或者这样写
+```
+...
+private final double amount;
+...
+public int compareTo(Transaction that) {
+  if (this.amount < that.amount) return +1;
+  if (this.amount > that.amount) return -1;
+  return 0;
+}
+...
+```
+
+
+##### 22. 测试上面的Transaction
+```java
+public class SortTransactions {
+  public static Transaction[] readTransactions() {
+    // ..
+  }
+  public static void main(String[] args) {
+    // ..
+    Transaction[] transactions = readTransactions();
+    Shell.sort(transactions);
+    for (t : transactions) {
+      StdOut.println(t);
+    }
+  }
+}
+```
