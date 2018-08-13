@@ -18,12 +18,12 @@ public class SortCompare {
     // 使用算法alg对T个长度为N的数组排序
     double total = 0.0;
     Double[] a = new Double[N];
-    for (int i = 0; i < T; i++) {
-      for (int j = 0; j < N; j++) {
+    for (int t = 0; t < T; t++) {
+      for (int j = 0; j < N; j++)
         a[j] = StdRandom.uniform();
-      }
       total += time(alg, a);
     }
+    System.out.println(total);
     return total;
   }
 
@@ -35,6 +35,6 @@ public class SortCompare {
     double t1 = timeRandomInput(alg1, N, T);
     double t2 = timeRandomInput(alg2, N, T);
     System.out.printf("For %d random Double\n  %s is", N, alg1);
-    System.out.printf(" %.1f times faster than %s\n", t1/t2, alg2);
+    System.out.printf(" %.1f times faster than %s\n", t2/t1, alg2);
   }
 }
