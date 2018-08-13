@@ -379,3 +379,67 @@ For 500 random Double
 > * 它们展示了一些性能的基准
 > * 在某些特殊情况下, 它们也是很好的选择
 > * 更强大开发的基石
+
+
+
+#### 2.1.6 希尔排序
+
+希尔排序的思想是使数组中的任意间隔为h的元素都是有序的。
+
+希尔排序更高效的原因: 它权衡了子数组的规模和有序性。
+
+子数组部分有序的程度取决于递增序列的选择。
+
+不是很理解希尔排序, 在《大话数据结构中》看了如下的描述:
+`分割成若干个自序列, 此时每个自序列待排序的记录个数就比较少, 然后在这些自序列内分别进行直接插入排序, 当整个序列基本都有序时, 注意只是基本有序时, 再对全体记录进行一次直接插入排序。`
+
+实现了代码再说
+```java
+public class Shell {
+  public static void sort(Comparable[] a) {
+    int N = a.length;
+    int h = 1;
+    while (h < N/3) h = 3*h+1;     // 1, 4, 13, 40, 121, 364, 1093, ..
+    while (h >= 1) {
+      // 将数组变为h有序
+      for (int i = h; i < N; i++) {
+        // 将a[i]插入到a[i-h], a[i-2*h], a[i-3*h]之中
+        for (int j = i; j >= h && less(a[j], a[j-h]); j -= h)
+          exch(a, j, j-h);
+      }
+      h = h/3;
+    }
+  }
+}
+```
+
+
+看下比较,...
+```sh
+bash-3.2$ java SortCompare Shell Insertion 1000 10
+For 1000 random Double
+  Shell is 5.0 times faster than Insertion
+bash-3.2$ java SortCompare Shell Selection 1000 10
+For 1000 random Double
+  Shell is 2.9 times faster than Selection
+bash-3.2$ java SortCompare Shell Selection 5000 10
+For 5000 random Double
+  Shell is 16.2 times faster than Selection
+bash-3.2$ java SortCompare Shell Insertion 5000 10
+For 5000 random Double
+  Shell is 18.5 times faster than Insertion
+bash-3.2$ java SortCompare Shell Insertion 10000 10
+For 10000 random Double
+  Shell is 43.8 times faster than Insertion
+```
+
+
+在实际应用中, 使用这个算法中的递增序列基本就足够了
+
+希尔排序性能利弊
+> * 中等大小的数组它的运行时间是可以接受的, 它的代码量小, 不需要占用额外的内存空间.
+> * 其他更高效的算法, 除了对很大的N, 他们只可能比希尔排序快两倍, 而且更加复杂。
+
+解决一个排序问题, 却没有排序函数可用的话, 可以先用希尔排序, 然后在考虑是否值得将它替换为更复杂的排序算法.
+
+也就是说, 还有更高效的排序算法, 在希尔排序之后出来, 因此希尔排序是慢排序和现代排序的分界线。
